@@ -45,70 +45,19 @@ public class Controller : MonoBehaviour
         Vector2 mousePos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
         mouseRect = new Circle(mousePos.x, mousePos.y, 2);
 
-        
-        Stopwatch sw = new Stopwatch();
-        sw.Start();
+        Rectangle rect = new Rectangle(posX, posY, width, height);
+        qt = new QuadTree(rect, 4);
 
-        selectedPoint.x = mousePos.x;
-        selectedPoint.y = mousePos.y;
+        for (int i = 0; i < points.Count / 2; i++) {
+            //qt.Remove(points[i]);
+            points[i].Move();
+            //qt.Insert(points[i]);
+        }
 
-        //Rectangle rect = new Rectangle(posX, posY, width, height);
-        //qt = new QuadTree(rect, 4);
-
-        //for (int i = 0; i < points.Count; i++)
-        //{
-        //    //qt.Remove(points[i]);
-        //    //points[i].Move();
-        //    qt.Insert(points[i]);
-        //}
-
-        qt.Remove(selectedPoint);
-        selectedPoint.x = mousePos.x;
-        selectedPoint.y = mousePos.y;
-        qt.Insert(selectedPoint);
-
-        sw.Stop();
-
-        UnityEngine.Debug.Log(sw.ElapsedMilliseconds + "ms");
-
-        //if (Input.GetMouseButton(0))
-        //{
-        //    //Vector2 mousePos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
-        //    var p = new Point(mousePos.x, mousePos.y);
-        //    qt.Insert(p);
-
-        //    points.Add(p);
-        //}
-
-        //if (Input.GetMouseButtonDown(1))
-        //{
-
-        //    var p = new Point(0, 0);
-        //    qt.Insert(p);
-
-        //    points.Add(p);
-        //}
-        //Rectangle rect = new Rectangle(posX, posY, width, height);
-        //qt = new QuadTree(rect, 4);
-        
-        //for (int i = 0; i < points.Count; i++)
-        //{
-        //    qt.Remove(points[i]);
-        //    points[i].Move();
-        //    qt.Insert(points[i]);
-        //}
-
-        //if (Input.GetKeyDown(KeyCode.Space))
-        //{
-        //    selectedPoint = points[points.Count - 1];
-        //    if (points.Count > 0)
-        //    {
-        //        qt.Remove(points[points.Count - 1]);
-        //        points.Remove(points[points.Count - 1]);
-        //    }
-        //}
-
-
+        for (int i = 0; i < points.Count; i++)
+        {
+            qt.Insert(points[i]);
+        }
     }
 
     List<Point> NormalQuerry(Rectangle rect) {
