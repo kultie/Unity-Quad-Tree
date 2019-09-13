@@ -31,23 +31,25 @@ namespace Kultie.QuadTree
             divided = false;
         }
 
-        public void Insert(Point p)
+        public bool Insert(Point p)
         {
             if (!rootRect.Contains(p))
             {
-                return;
+                return false;
             }
 
             if (points == null)
             {
                 points = new List<Point>();
                 points.Add(p);
+                return true;
             }
             else
             {
                 if (points.Count < capacity)
                 {
                     points.Add(p);
+                    return true;
                 }
                 else
                 {
@@ -55,10 +57,26 @@ namespace Kultie.QuadTree
                         Subdivide();
                     }
 
-                    northWest.Insert(p);
-                    northEast.Insert(p);
-                    southWest.Insert(p);
-                    southEast.Insert(p);
+                    if (northWest.Insert(p)) {
+                        return true;
+                    }
+
+                    if (northEast.Insert(p))
+                    {
+                        return true;
+                    }
+
+                    if (southWest.Insert(p))
+                    {
+                        return true;
+                    }
+
+                    if (southEast.Insert(p))
+                    {
+                        return true;
+                    }
+
+                    return false;
                 }
             }
         }
@@ -90,6 +108,37 @@ namespace Kultie.QuadTree
 
             divided = true;
         }
+
+        public List<Point> Querry(Rectangle range) {
+
+            List<Point> list = new List<Point>();
+
+            if (!rootRect.Intersect(range)) {
+                //Not intersect
+                return list;
+            }
+
+            if (points == null) {
+                return list;
+            }
+
+            for (int i = 0; i < points.Count; i++) {
+                if (range.Contains(points[i])) {
+                    list.Add(points[i]);
+                }
+            }
+
+            if (!divided) {
+                return list;
+            }
+
+            list.AddRange(northWest.Querry(range));
+            list.AddRange(northEast.Querry(range));
+            list.AddRange(southWest.Querry(range));
+            list.AddRange(southEast.Querry(range));
+
+            return list;
+        }
     }
     //Base class for each entity that gonna use in Quad Tree
     [System.Serializable]
@@ -111,12 +160,17 @@ namespace Kultie.QuadTree
     {
         public float x, y, w, h;
 
+        public Vector2 topLeft;
+        public Vector2 bottomRight;
+
         public Rectangle(float _x, float _y, float _w, float _h)
         {
             x = _x;
             y = _y;
             w = _w;
             h = _h;
+            topLeft = new Vector2(x - w / 2, y + h / 2);
+            bottomRight = new Vector2(x + w / 2, y - h / 2);
         }
 
         public bool Contains(Point p)
@@ -126,6 +180,10 @@ namespace Kultie.QuadTree
                 return value;
             }
             return value;
+        }
+
+        public bool Intersect(Rectangle rect) {
+            return !(topLeft.x > rect.bottomRight.x || topLeft.y < rect.bottomRight.y || bottomRight.x < rect.topLeft.x || bottomRight.y > rect.topLeft.y); 
         }
     }
 }
