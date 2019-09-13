@@ -154,9 +154,11 @@ MonoBehaviour:
   posX: 0
   posY: 0
   pGoPref: {fileID: 1694492520681680, guid: 37598eade27a344a0af6b63d6a0c5fdf, type: 2}
-  objectCount: 250
-  showArea: 0
-  showPoints: 0
+  objectCount: 5
+  showArea: 1
+  showPoints: 1
+  useQuadTreeForQuerry: 0
+  showQuerry: 0
 --- !u!20 &519420031
 Camera:
   m_ObjectHideFlags: 0

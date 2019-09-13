@@ -17,10 +17,10 @@ public class Controller : MonoBehaviour
     public bool showPoints;
     public bool useQuadTreeForQuerry;
     public bool showQuerry;
+    Particle selectedPoint;
+    List<Particle> points = new List<Particle>();
 
-    List<Point> points = new List<Point>();
-
-    Rectangle mouseRect;
+    Circle mouseRect;
 
 
     // Use this for initialization
@@ -28,22 +28,48 @@ public class Controller : MonoBehaviour
     {
         Rectangle rect = new Rectangle(posX, posY, width, height);
         qt = new QuadTree(rect, 4);
-
+        selectedPoint = new Particle(Random.Range(-width / 2, width / 2), Random.Range(-height / 2, height / 2));
         for (int i = 0; i < objectCount; i++)
         {
-            var p = new Point(Random.Range(-width / 2, width / 2), Random.Range(-height / 2, height / 2));
+            var p = new Particle(Random.Range(-width / 2, width / 2), Random.Range(-height / 2, height / 2));
             points.Add(p);
             qt.Insert(p);
         }
-
-
+        qt.Insert(selectedPoint);
+        points.Add(selectedPoint);
     }
 
     // Update is called once per frame
     void Update()
     {
         Vector2 mousePos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
-        mouseRect = new Rectangle(mousePos.x, mousePos.y , 2, 2);
+        mouseRect = new Circle(mousePos.x, mousePos.y, 2);
+
+        
+        Stopwatch sw = new Stopwatch();
+        sw.Start();
+
+        selectedPoint.x = mousePos.x;
+        selectedPoint.y = mousePos.y;
+
+        //Rectangle rect = new Rectangle(posX, posY, width, height);
+        //qt = new QuadTree(rect, 4);
+
+        //for (int i = 0; i < points.Count; i++)
+        //{
+        //    //qt.Remove(points[i]);
+        //    //points[i].Move();
+        //    qt.Insert(points[i]);
+        //}
+
+        qt.Remove(selectedPoint);
+        selectedPoint.x = mousePos.x;
+        selectedPoint.y = mousePos.y;
+        qt.Insert(selectedPoint);
+
+        sw.Stop();
+
+        UnityEngine.Debug.Log(sw.ElapsedMilliseconds + "ms");
 
         //if (Input.GetMouseButton(0))
         //{
@@ -62,6 +88,27 @@ public class Controller : MonoBehaviour
 
         //    points.Add(p);
         //}
+        //Rectangle rect = new Rectangle(posX, posY, width, height);
+        //qt = new QuadTree(rect, 4);
+        
+        //for (int i = 0; i < points.Count; i++)
+        //{
+        //    qt.Remove(points[i]);
+        //    points[i].Move();
+        //    qt.Insert(points[i]);
+        //}
+
+        //if (Input.GetKeyDown(KeyCode.Space))
+        //{
+        //    selectedPoint = points[points.Count - 1];
+        //    if (points.Count > 0)
+        //    {
+        //        qt.Remove(points[points.Count - 1]);
+        //        points.Remove(points[points.Count - 1]);
+        //    }
+        //}
+
+
     }
 
     List<Point> NormalQuerry(Rectangle rect) {
@@ -71,6 +118,44 @@ public class Controller : MonoBehaviour
                 list.Add(points[i]);
             }
         }       
+        return list;
+    }
+
+    List<Particle> NormalCollisionDetection() {
+        List<Particle> list = new List<Particle>();
+        for (int i = 0; i < points.Count; i++)
+        {
+            Particle par = points[i];
+            for (int j = 0; j < points.Count; j++) {
+                if (par != points[j]) {
+                    if (par.Intersect(points[j])) {
+                        list.Add(points[j]);
+                    }
+                }
+            }
+        }
+        return list;
+    }
+
+    List<Particle> QuadTreeCollisioDetection()
+    {
+        List<Particle> list = new List<Particle>();
+        for (int i = 0; i < points.Count; i++)
+        {
+            Particle par = points[i];
+            Circle circle = new Circle(points[i].x, points[i].y, 0.025f);
+            List<Point> querryList = qt.Querry(circle);
+            for (int j = 0; j < querryList.Count; j++)
+            {
+                if (par != querryList[j])
+                {
+                    if (par.Intersect((Particle)querryList[j]))
+                    {
+                        list.Add((Particle)querryList[j]);
+                    }
+                }
+            }
+        }
         return list;
     }
 
@@ -90,41 +175,61 @@ public class Controller : MonoBehaviour
 
 
             if (showPoints)
-            {
+            {             
                 for (int i = 0; i < points.Count; i++)
-                {
-                    Gizmos.DrawSphere(new Vector3(points[i].x, points[i].y), 0.01f);
+                {                   
+                    Gizmos.DrawSphere(new Vector3(points[i].x, points[i].y), 0.05f);
                 }
+                //if (selectedPoint != null)
+                //{
+                //    Gizmos.color = Color.yellow;
+
+                //    Gizmos.DrawSphere(new Vector3(selectedPoint.x, selectedPoint.y), 0.05f);
+                //    QuadTree container = qt.FindContainer(selectedPoint);
+                //    if (container != null)
+                //    {
+                //        Rectangle rect = container.GetRectangle();
+                //        Gizmos.DrawWireCube(new Vector3(rect.x, rect.y), new Vector3(rect.w, rect.h));
+                //    }
+                //}
             }
 
-            if (showQuerry) {
+           
+
+
+            if (showQuerry)
+            {
                 //showArea = true;
                 //showPoints = true;
                 Gizmos.color = Color.red;
-                Gizmos.DrawWireCube(new Vector3(mouseRect.x, mouseRect.y), new Vector3(mouseRect.w, mouseRect.h));
-               
+                Gizmos.DrawWireSphere(new Vector3(mouseRect.x, mouseRect.y), 2);
+
                 if (useQuadTreeForQuerry)
                 {
-                    Stopwatch sw = new Stopwatch();
-                    sw.Start();
-                    List<Point> querry = qt.Querry(mouseRect);
-                    sw.Stop();
-                    UnityEngine.Debug.Log("Quad Tree Querry: " + sw.ElapsedMilliseconds + "ms");
+                    List<Point> querry = qt.Querry(mouseRect);                 
                     for (int i = 0; i < querry.Count; i++)
                     {
-                        Gizmos.DrawSphere(new Vector3(querry[i].x, querry[i].y), 0.01f);
+                        Gizmos.DrawSphere(new Vector3(querry[i].x, querry[i].y), 0.05f);
                     }
                 }
-                else {
-                    Stopwatch sw = new Stopwatch();
-                    sw.Start();
-                    List<Point> querry = NormalQuerry(mouseRect);
-                    sw.Stop();
-                    UnityEngine.Debug.Log("Normal Querry: " + sw.ElapsedMilliseconds + "ms");                    
-                    for (int i = 0; i < querry.Count; i++)
-                    {
-                        Gizmos.DrawSphere(new Vector3(querry[i].x, querry[i].y), 0.01f);
-                    }
+                //else
+                //{
+                //    Stopwatch sw = new Stopwatch();
+                //    sw.Start();
+                //    List<Point> querry = NormalQuerry(mouseRect);
+                //    sw.Stop();
+                //    UnityEngine.Debug.Log("Normal Querry: " + sw.ElapsedMilliseconds + "ms");
+                //    for (int i = 0; i < querry.Count; i++)
+                //    {
+                //        Gizmos.DrawSphere(new Vector3(querry[i].x, querry[i].y), 0.01f);
+                //    }
+                //}
+
+                List<Particle> partList = useQuadTreeForQuerry ? QuadTreeCollisioDetection() : NormalCollisionDetection();
+                Gizmos.color = Color.blue;
+                for (int i = 0; i < partList.Count; i++)
+                {
+                    Gizmos.DrawSphere(new Vector3(partList[i].x, partList[i].y), 0.05f);
                 }
             }
         }
